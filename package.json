@@ -4,6 +4,27 @@
   "description": "A single-file format and runtime for LLM prompts.",
   "type": "module",
   "license": "MIT",
+  "author": "kunal-dd",
+  "homepage": "https://github.com/kunal-dd/promptfile#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kunal-dd/promptfile.git"
+  },
+  "bugs": {
+    "url": "https://github.com/kunal-dd/promptfile/issues"
+  },
+  "keywords": [
+    "prompt",
+    "llm",
+    "ai",
+    "anthropic",
+    "claude",
+    "openai",
+    "gpt",
+    "prompt-engineering",
+    "prompt-management",
+    "cli"
+  ],
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",

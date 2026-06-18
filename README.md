@@ -1,5 +1,9 @@
 # promptfile
 
+[![CI](https://github.com/kunal-dd/promptfile/actions/workflows/ci.yml/badge.svg)](https://github.com/kunal-dd/promptfile/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/promptfile.svg)](https://www.npmjs.com/package/promptfile)
+[![license](https://img.shields.io/npm/l/promptfile.svg)](./LICENSE)
+
 A single-file format and runtime for LLM prompts. Write a `.prompt` file once —
 versioned, provider-portable, separated from your app code — then render or run it.
 
