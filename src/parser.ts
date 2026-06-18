@@ -2,6 +2,7 @@ import { parse as parseYaml } from "yaml";
 import { PromptParseError } from "./errors.js";
 import type { InputSpec, InputType, Message, PromptAST, PromptConfig, Role } from "./types.js";
 import { parseTests } from "./tests/parse-tests.js";
+import { parseOutputSchema } from "./output/schema.js";
 
 const FRONTMATTER_RE = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/;
 const ROLE_BLOCK_RE = /<(system|user|assistant)>([\s\S]*?)<\/\1>/g;
@@ -32,11 +33,13 @@ export function parse(text: string): PromptAST {
     );
   }
 
+  const frontOutput = frontmatter.output;
   return {
     config: parseConfig(frontmatter),
     inputs: parseInputs(frontmatter.input),
     messages: parseBody(body),
     tests: parseTests(frontmatter.tests),
+    output: frontOutput === undefined ? undefined : parseOutputSchema(frontOutput),
   };
 }
 

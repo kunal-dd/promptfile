@@ -4,6 +4,7 @@ import { renderMessages } from "./renderer.js";
 import { getAdapter } from "./providers/registry.js";
 import type { Inputs, InputSpec, Message, PromptAST, PromptConfig, RunOptions, RunResult } from "./types.js";
 import type { TestCase } from "./tests/types.js";
+import type { OutputSchema } from "./output/types.js";
 
 export class Prompt {
   constructor(private readonly ast: PromptAST) {}
@@ -18,6 +19,10 @@ export class Prompt {
 
   get tests(): TestCase[] {
     return this.ast.tests ?? [];
+  }
+
+  get output(): OutputSchema | undefined {
+    return this.ast.output;
   }
 
   render(inputs: Inputs = {}): Message[] {
