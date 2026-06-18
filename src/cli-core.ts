@@ -69,7 +69,7 @@ async function resolveInputs(
 
 export function buildProgram(): Command {
   const program = new Command();
-  program.name("promptfile").description("Run and render .prompt files.").version("0.1.0");
+  program.name("promptfile").description("Run and render .prompt files.").version("0.2.0");
 
   program
     .command("render")

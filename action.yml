@@ -1,0 +1,26 @@
+name: "promptfile test"
+description: "Run promptfile .prompt tests as a CI gate."
+branding:
+  icon: "check-circle"
+  color: "purple"
+inputs:
+  files:
+    description: "Glob of .prompt files to test."
+    required: false
+    default: "**/*.prompt"
+  render-only:
+    description: "Run deterministic render tests only (no API keys needed)."
+    required: false
+    default: "true"
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+    - shell: bash
+      run: |
+        shopt -s globstar nullglob
+        flag=""
+        if [ "${{ inputs.render-only }}" = "true" ]; then flag="--render-only"; fi
+        npx --yes promptfile@latest test ${{ inputs.files }} $flag

@@ -5,6 +5,16 @@ temperature: 0.7
 input:
   name: string
   tone?: string
+tests:
+  - name: renders a greeting
+    input: { name: Kunal, tone: warm }
+    assert:
+      - rendered_contains: "greeting"
+  - name: greets the person by name
+    input: { name: Kunal, tone: warm }
+    assert:
+      - response_contains: "Kunal"
+      - judge: "the message is a friendly greeting addressed to Kunal"
 ---
 <system>
 You are a friendly assistant who writes short greetings.
