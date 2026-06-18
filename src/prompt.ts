@@ -3,6 +3,7 @@ import { parse } from "./parser.js";
 import { renderMessages } from "./renderer.js";
 import { getAdapter } from "./providers/registry.js";
 import type { Inputs, InputSpec, Message, PromptAST, PromptConfig, RunOptions, RunResult } from "./types.js";
+import type { TestCase } from "./tests/types.js";
 
 export class Prompt {
   constructor(private readonly ast: PromptAST) {}
@@ -13,6 +14,10 @@ export class Prompt {
 
   get inputs(): InputSpec[] {
     return this.ast.inputs;
+  }
+
+  get tests(): TestCase[] {
+    return this.ast.tests ?? [];
   }
 
   render(inputs: Inputs = {}): Message[] {
