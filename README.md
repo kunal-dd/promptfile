@@ -62,6 +62,70 @@ promptfile render greeting.prompt --var name=Kunal --var tone=warm
 promptfile run greeting.prompt --var name=Kunal --var tone=warm
 ```
 
+## Testing prompts
+
+Add a `tests:` block to your `.prompt` file and catch prompt regressions in CI.
+Tests come in two flavors:
+
+- **Render tests** — deterministic, no API call. Assert on the rendered messages.
+- **Live tests** — call the provider and assert on the response, including an
+  `llm_judge` criterion graded by a model.
+
+```
+---
+model: claude-opus-4-8
+provider: anthropic
+input:
+  name: string
+  tone: string
+tests:
+  - name: includes the safety clause
+    input: { name: Kunal, tone: rude }
+    assert:
+      - rendered_contains: "be respectful"        # deterministic, no API call
+
+  - name: declines rude requests
+    input: { name: Kunal, tone: rude }
+    assert:
+      - response_not_contains: "sure thing"        # live: checks the model reply
+      - response_matches: "(?i)sorry|can't"
+      - judge: "the reply politely declines the rude request"   # live: llm_judge
+---
+<system>Be respectful and {{tone}}-aware.</system>
+<user>Greet {{name}}.</user>
+```
+
+Matchers: `rendered_contains` / `rendered_not_contains` / `rendered_matches`
+(deterministic), and `response_contains` / `response_not_contains` /
+`response_matches` / `judge` (live). A test is **live** if it has any
+`response_*` or `judge` assertion. `judge` reuses the prompt's model by default;
+override per-test with `judge_model` / `judge_provider`.
+
+Run them:
+
+```bash
+# Render tests always run; live tests run when an API key is present,
+# and are skipped otherwise. Exit code is 1 if any test fails.
+promptfile test greeting.prompt
+
+# Skip live tests even if a key exists (fast, free, deterministic).
+promptfile test greeting.prompt --render-only
+
+# Fail (instead of skip) live tests when no key is available.
+promptfile test greeting.prompt --require-live
+```
+
+## Use in CI
+
+The deterministic suite needs no secrets, so it makes a clean merge gate:
+
+```yaml
+- uses: kunal-dd/promptfile@v2
+  with:
+    files: "prompts/**/*.prompt"
+    render-only: "true"   # set false + provide provider keys to run live tests
+```
+
 ## Providers
 
 Anthropic and OpenAI are built in. Add your own with `registerAdapter`.

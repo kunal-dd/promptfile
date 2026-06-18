@@ -20,6 +20,8 @@ runs:
         node-version: 20
     - shell: bash
       run: |
+        # `files` is glob-expanded UNQUOTED into the variadic `test <files...>` arg.
+        # Use plain globs only — do not pass paths with spaces or untrusted input.
         shopt -s globstar nullglob
         flag=""
         if [ "${{ inputs.render-only }}" = "true" ]; then flag="--render-only"; fi
