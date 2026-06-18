@@ -1,3 +1,5 @@
+import type { TestCase } from "./tests/types.js";
+
 export type Role = "system" | "user" | "assistant";
 
 export interface Message {
@@ -25,6 +27,8 @@ export interface PromptAST {
   inputs: InputSpec[];
   /** Template messages, still containing {{vars}}. */
   messages: Message[];
+  /** Parsed `tests:` block; absent/empty when the file declares no tests. */
+  tests?: TestCase[];
 }
 
 export type Inputs = Record<string, string | number | boolean>;
