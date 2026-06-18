@@ -5,6 +5,8 @@ import { getAdapter } from "./providers/registry.js";
 import type { Inputs, InputSpec, Message, PromptAST, PromptConfig, RunOptions, RunResult } from "./types.js";
 import type { TestCase } from "./tests/types.js";
 import type { OutputSchema } from "./output/types.js";
+import { schemaInstruction } from "./output/instruction.js";
+import { coerce, type ReAsk } from "./output/repair.js";
 
 export class Prompt {
   constructor(private readonly ast: PromptAST) {}
@@ -32,7 +34,30 @@ export class Prompt {
   async run(inputs: Inputs = {}, opts: RunOptions = {}): Promise<RunResult> {
     const messages = this.render(inputs);
     const adapter = getAdapter(this.ast.config.provider);
-    return adapter.generate(messages, this.ast.config, opts);
+    if (!this.ast.output) {
+      return adapter.generate(messages, this.ast.config, opts);
+    }
+    const schema = this.ast.output;
+    const baseMessages: Message[] = [
+      ...messages,
+      { role: "system", content: schemaInstruction(schema) },
+    ];
+    const reAsk: ReAsk = async (prevText, problems) => {
+      const repairMessages: Message[] = [
+        ...baseMessages,
+        { role: "assistant", content: prevText },
+        {
+          role: "user",
+          content: `Your previous output was invalid:\n${problems.join(
+            "\n"
+          )}\nReturn corrected JSON only — no prose, no code fences.`,
+        },
+      ];
+      return (await adapter.generate(repairMessages, this.ast.config, opts)).text;
+    };
+    const first = await adapter.generate(baseMessages, this.ast.config, opts);
+    const { data, text } = await coerce(first.text, schema, reAsk, opts.repair ?? 1);
+    return { ...first, text, data };
   }
 }
 
