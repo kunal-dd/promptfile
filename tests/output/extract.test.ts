@@ -17,4 +17,7 @@ describe("extractJson", () => {
   it("returns null when there is no object", () => {
     expect(extractJson("no json here")).toBe(null);
   });
+  it("falls back to raw scan when fenced JSON contains ``` inside a string", () => {
+    expect(extractJson('```json\n{"code":"```py"}\n```')).toBe('{"code":"```py"}');
+  });
 });

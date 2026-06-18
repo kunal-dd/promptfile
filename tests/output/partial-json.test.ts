@@ -20,6 +20,9 @@ describe("parsePartial", () => {
   it("closes nested arrays and objects", () => {
     expect(parsePartial('{"a":[1,2,{"b":"x')).toEqual({ a: [1, 2, { b: "x" }] });
   });
+  it("handles a trailing backslash at the truncation boundary", () => {
+    expect(parsePartial('{"a":"x\\')).toEqual({ a: "x" });
+  });
   it("never throws and is monotonic over growing prefixes", () => {
     const full = '{"title":"Hello","tags":["a","b"],"n":3}';
     let last: unknown = undefined;

@@ -1,11 +1,20 @@
 export function extractJson(text: string): string | null {
-  let s = text.trim();
-  const fence = s.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  if (fence) s = fence[1]!.trim();
+  const trimmed = text.trim();
+  // Prefer fenced content, but fall back to the raw text when the fence body
+  // doesn't yield a balanced object — e.g. a JSON string value contains ``` itself,
+  // which the non-greedy fence match would truncate.
+  const fence = trimmed.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  if (fence) {
+    const fromFence = scanBalanced(fence[1]!.trim());
+    if (fromFence !== null) return fromFence;
+  }
+  return scanBalanced(trimmed);
+}
 
+// Returns the first balanced { ... } object in s (string/escape aware), or null.
+function scanBalanced(s: string): string | null {
   const start = s.indexOf("{");
   if (start === -1) return null;
-
   let depth = 0;
   let inString = false;
   let escape = false;

@@ -2,6 +2,9 @@ export function parsePartial(text: string): unknown | undefined {
   const start = text.indexOf("{");
   if (start === -1) return undefined;
   const s = text.slice(start);
+  // Trim back one char at a time until a completion parses. O(n^2) worst case,
+  // but partial stream chunks are small. The trim-back also rescues a dangling
+  // trailing backslash that would otherwise escape the quote closeOpen appends.
   // Try progressively shorter prefixes, closing open structures, until one parses.
   for (let end = s.length; end > 0; end--) {
     try {
