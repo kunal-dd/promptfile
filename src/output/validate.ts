@@ -35,6 +35,10 @@ export function validateValue(schema: OutputSchema, value: unknown, path = ""): 
       }
       return errors;
     }
+    default: {
+      const _exhaustive: never = schema;
+      throw new Error(`unhandled schema kind: ${String(_exhaustive)}`);
+    }
   }
 }
 

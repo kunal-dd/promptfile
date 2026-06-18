@@ -22,5 +22,9 @@ function describe(schema: OutputSchema): string {
       return `{ ${schema.fields
         .map((f) => `${f.name}${f.required ? "" : "?"}: ${describe(f.schema)}`)
         .join(", ")} }`;
+    default: {
+      const _exhaustive: never = schema;
+      throw new Error(`unhandled schema kind: ${String(_exhaustive)}`);
+    }
   }
 }
