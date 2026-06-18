@@ -11,28 +11,37 @@ export function collectVar(value: string, previous: Record<string, string>): Rec
   return { ...previous, [value.slice(0, eq)]: value.slice(eq + 1) };
 }
 
+/**
+ * Coerce a single raw value to the type declared by its input spec. String
+ * values (from `--var` or a string in a vars-file) are parsed; values that
+ * already have the right primitive type (from JSON in a vars-file) pass through.
+ */
+export function coerceValue(
+  spec: InputSpec | undefined,
+  value: string | number | boolean,
+  key: string
+): string | number | boolean {
+  if (!spec || typeof value !== "string") return value;
+  switch (spec.type) {
+    case "number": {
+      const n = Number(value);
+      if (Number.isNaN(n)) throw new Error(`Input '${key}' must be a number, got '${value}'.`);
+      return n;
+    }
+    case "boolean":
+      if (value === "true" || value === "1") return true;
+      if (value === "false" || value === "0") return false;
+      throw new Error(`Input '${key}' must be a boolean (true/false), got '${value}'.`);
+    default:
+      return value;
+  }
+}
+
 export function coerceInputs(specs: InputSpec[], raw: Record<string, string>): Inputs {
   const byName = new Map(specs.map((s) => [s.name, s]));
   const out: Inputs = {};
   for (const [key, val] of Object.entries(raw)) {
-    const spec = byName.get(key);
-    if (!spec) {
-      out[key] = val;
-      continue;
-    }
-    switch (spec.type) {
-      case "number": {
-        const n = Number(val);
-        if (Number.isNaN(n)) throw new Error(`Input '${key}' must be a number, got '${val}'.`);
-        out[key] = n;
-        break;
-      }
-      case "boolean":
-        out[key] = val === "true" || val === "1";
-        break;
-      default:
-        out[key] = val;
-    }
+    out[key] = coerceValue(byName.get(key), val, key);
   }
   return out;
 }
@@ -42,11 +51,17 @@ async function resolveInputs(
   vars: Record<string, string>,
   specs: InputSpec[]
 ): Promise<Inputs> {
-  let base: Inputs = {};
+  const byName = new Map(specs.map((s) => [s.name, s]));
+  const merged: Record<string, string | number | boolean> = {};
   if (varsFile) {
-    base = JSON.parse(await readFile(varsFile, "utf8")) as Inputs;
+    Object.assign(merged, JSON.parse(await readFile(varsFile, "utf8")) as Inputs);
   }
-  return { ...base, ...coerceInputs(specs, vars) };
+  Object.assign(merged, vars); // --var overrides vars-file
+  const out: Inputs = {};
+  for (const [key, val] of Object.entries(merged)) {
+    out[key] = coerceValue(byName.get(key), val, key);
+  }
+  return out;
 }
 
 export function buildProgram(): Command {

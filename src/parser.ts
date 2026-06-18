@@ -11,7 +11,8 @@ export function parse(text: string): PromptAST {
   const match = text.match(FRONTMATTER_RE);
   if (!match) {
     throw new PromptParseError(
-      "Missing or malformed frontmatter. A .prompt file must start with a YAML block delimited by '---'."
+      "Missing or malformed frontmatter. A .prompt file must start with a YAML block delimited by '---'.",
+      1
     );
   }
   const yamlSrc = match[1]!;
@@ -21,7 +22,13 @@ export function parse(text: string): PromptAST {
   try {
     frontmatter = (parseYaml(yamlSrc) as Record<string, unknown>) ?? {};
   } catch (e) {
-    throw new PromptParseError(`Invalid YAML in frontmatter: ${(e as Error).message}`);
+    const err = e as { message: string; linePos?: Array<{ line: number; col: number }> };
+    // yaml reports positions within the frontmatter block; +1 accounts for the opening '---' line.
+    const yamlLine = err.linePos?.[0]?.line;
+    throw new PromptParseError(
+      `Invalid YAML in frontmatter: ${err.message}`,
+      yamlLine === undefined ? undefined : yamlLine + 1
+    );
   }
 
   return {

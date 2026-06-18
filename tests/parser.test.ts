@@ -60,4 +60,26 @@ describe("parse", () => {
   it("throws on an empty body", () => {
     expect(() => parse(`---\nmodel: m\nprovider: openai\n---\n   `)).toThrow(/empty/);
   });
+
+  it("reports line 1 when frontmatter is missing", () => {
+    let err: unknown;
+    try {
+      parse("no frontmatter here");
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(PromptParseError);
+    expect((err as PromptParseError).line).toBe(1);
+  });
+
+  it("includes a line number for a YAML syntax error", () => {
+    let err: unknown;
+    try {
+      parse(`---\nmodel: "unterminated\nprovider: openai\n---\nhi`);
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeInstanceOf(PromptParseError);
+    expect((err as PromptParseError).line).toBeGreaterThan(0);
+  });
 });
