@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import { Command } from "commander";
 import { loadPrompt } from "./prompt.js";
+import { runTests } from "./tests/runner.js";
+import { formatReport, exitCode, mergeReports } from "./tests/reporter.js";
+import type { TestReport } from "./tests/types.js";
 import type { Inputs, InputSpec } from "./types.js";
 
 export function collectVar(value: string, previous: Record<string, string>): Record<string, string> {
@@ -90,6 +93,29 @@ export function buildProgram(): Command {
       const result = await prompt.run(inputs);
       console.log(result.text);
     });
+
+  program
+    .command("test")
+    .argument("<files...>", "one or more .prompt files to test")
+    .option("--render-only", "run deterministic render tests only (no API calls)")
+    .option("--require-live", "fail (instead of skip) live tests when no API key is available")
+    .action(
+      async (files: string[], options: { renderOnly?: boolean; requireLive?: boolean }) => {
+        const reports: TestReport[] = [];
+        for (const file of files) {
+          const prompt = await loadPrompt(file);
+          reports.push(
+            await runTests(prompt, {
+              renderOnly: options.renderOnly,
+              requireLive: options.requireLive,
+            })
+          );
+        }
+        const merged = mergeReports(reports);
+        console.log(formatReport(merged));
+        process.exitCode = exitCode(merged);
+      }
+    );
 
   return program;
 }
