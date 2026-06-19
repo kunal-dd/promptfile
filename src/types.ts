@@ -40,15 +40,17 @@ export interface RunOptions {
   apiKey?: string;
   /** Override the provider endpoint (used in tests). */
   baseUrl?: string;
-  /** Number of automatic repair attempts when output fails schema validation. */
+  /** Max corrective re-asks when output fails the schema. Default 1. */
   repair?: number;
+  /** How to obtain structured output when an `output:` schema is present. */
+  outputMode?: "auto" | "native" | "prompt";
 }
 
-export interface RunResult {
+export interface RunResult<T = unknown> {
   text: string;
   raw: unknown;
   model: string;
   provider: string;
-  /** Parsed structured data when an output schema was declared and validated. */
-  data?: unknown;
+  /** Validated structured output when the prompt declares an `output:` schema. */
+  data?: T;
 }

@@ -1,22 +1,22 @@
 import { parsePartial } from "./partial-json.js";
 import type { OutputSchema } from "./types.js";
 
-export type Settle = (fullText: string) => Promise<{ data: unknown; text: string }>;
+export type Settle<T = unknown> = (fullText: string) => Promise<{ data: T; text: string }>;
 
-export class StructuredStream implements AsyncIterable<unknown> {
+export class StructuredStream<T = unknown> implements AsyncIterable<unknown> {
   private queue: unknown[] = [];
   private done = false;
   private error: unknown = null;
   private waiters: Array<() => void> = [];
   private started = false;
-  private readonly _complete: Promise<{ data: unknown; text: string }>;
-  private resolveComplete!: (v: { data: unknown; text: string }) => void;
+  private readonly _complete: Promise<{ data: T; text: string }>;
+  private resolveComplete!: (v: { data: T; text: string }) => void;
   private rejectComplete!: (e: unknown) => void;
 
   constructor(
     private readonly source: AsyncIterable<string>,
     private readonly schema: OutputSchema | undefined,
-    private readonly settle: Settle
+    private readonly settle: Settle<T>
   ) {
     this._complete = new Promise((res, rej) => {
       this.resolveComplete = res;
@@ -26,7 +26,7 @@ export class StructuredStream implements AsyncIterable<unknown> {
     this._complete.catch(() => {});
   }
 
-  get complete(): Promise<{ data: unknown; text: string }> {
+  get complete(): Promise<{ data: T; text: string }> {
     this.start();
     return this._complete;
   }

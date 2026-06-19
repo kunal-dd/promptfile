@@ -8,4 +8,10 @@ export interface ProviderAdapter {
     config: PromptConfig,
     opts: RunOptions
   ): AsyncIterable<string>;
+  generateStructured?(
+    messages: Message[],
+    config: PromptConfig,
+    jsonSchema: Record<string, unknown>,
+    opts: RunOptions
+  ): Promise<RunResult>;
 }

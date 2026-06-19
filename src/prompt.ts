@@ -79,7 +79,7 @@ export class Prompt {
 
     if (!schema) {
       const source = streamFrom(adapter, messages, this.ast.config, opts);
-      return new StructuredStream(source, undefined, async (text) => ({ data: undefined, text }));
+      return new StructuredStream<unknown>(source, undefined, async (text) => ({ data: undefined, text }));
     }
 
     const { baseMessages, reAsk } = this.buildStructured(messages, schema, opts);
