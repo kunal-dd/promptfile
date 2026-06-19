@@ -7,6 +7,9 @@ output:
   title: string
   sentiment: enum(positive, neutral, negative)
   topics: string[]
+  entities[]:
+    name: string
+    kind: enum(person, place, org)
 ---
 <system>
 Extract structured metadata from the user's text.

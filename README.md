@@ -149,9 +149,31 @@ output:
 <user>{{text}}</user>
 ```
 
-Schema types: `string`, `number`, `boolean`, `enum(a, b, c)`, arrays (`string[]`),
-nested objects (indent), and optional fields (`name?`). Arrays hold scalars/enums
-in this release.
+Schema types: `string`, `number`, `boolean`, `enum(a, b, c)`, scalar arrays
+(`string[]`), nested objects (indent), **arrays of objects** (`items[]:` then an
+indented map; `items[]?` for optional), and optional fields (`name?`). `name[]?`
+is the canonical optional-array form.
+
+When the provider supports it, promptfile uses **native structured output**
+(OpenAI `response_format`, Anthropic tools) so the model is constrained to the
+schema; otherwise it falls back to prompt injection. Force a mode with
+`run(inputs, { outputMode: "auto" | "native" | "prompt" })`.
+
+### Typed output
+
+Generate TypeScript interfaces from your `output:` schemas:
+
+```bash
+promptfile types ./prompts/*.prompt -o prompts.types.ts
+```
+
+Then type the result:
+
+```ts
+import type { Extract } from "./prompts.types";
+const r = await prompt.run<Extract>({ text: "..." });
+r.data; // typed as Extract
+```
 
 ```ts
 const result = await prompt.run({ text: "..." });

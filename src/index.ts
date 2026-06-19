@@ -23,3 +23,5 @@ export { StructuredStream } from "./output/stream.js";
 export { parseOutputSchema } from "./output/schema.js";
 export { validateValue } from "./output/validate.js";
 export type { OutputSchema, OutputField, OutputError } from "./output/types.js";
+export { toJsonSchema } from "./output/json-schema.js";
+export { toTypeScript } from "./output/typegen.js";
