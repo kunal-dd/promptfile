@@ -9,6 +9,8 @@ import { schemaInstruction } from "./output/instruction.js";
 import { coerce, type ReAsk } from "./output/repair.js";
 import { StructuredStream } from "./output/stream.js";
 import type { ProviderAdapter } from "./providers/types.js";
+import { ProviderError } from "./errors.js";
+import { toJsonSchema } from "./output/json-schema.js";
 
 export class Prompt {
   constructor(private readonly ast: PromptAST) {}
@@ -59,17 +61,20 @@ export class Prompt {
     return { baseMessages, reAsk };
   }
 
-  async run(inputs: Inputs = {}, opts: RunOptions = {}): Promise<RunResult> {
+  async run<T = unknown>(inputs: Inputs = {}, opts: RunOptions = {}): Promise<RunResult<T>> {
     const messages = this.render(inputs);
     const adapter = getAdapter(this.ast.config.provider);
     if (!this.ast.output) {
-      return adapter.generate(messages, this.ast.config, opts);
+      return (await adapter.generate(messages, this.ast.config, opts)) as RunResult<T>;
     }
     const schema = this.ast.output;
     const { baseMessages, reAsk } = this.buildStructured(messages, schema, opts);
-    const first = await adapter.generate(baseMessages, this.ast.config, opts);
+    const useNative = resolveNative(adapter, opts.outputMode);
+    const first = useNative
+      ? await adapter.generateStructured!(messages, this.ast.config, toJsonSchema(schema), opts)
+      : await adapter.generate(baseMessages, this.ast.config, opts);
     const { data, text } = await coerce(first.text, schema, reAsk, opts.repair ?? 1);
-    return { ...first, text, data };
+    return { ...first, text, data } as RunResult<T>;
   }
 
   stream(inputs: Inputs = {}, opts: RunOptions = {}): StructuredStream {
@@ -88,6 +93,19 @@ export class Prompt {
       coerce(text, schema, reAsk, opts.repair ?? 1)
     );
   }
+}
+
+function resolveNative(adapter: ProviderAdapter, mode: RunOptions["outputMode"]): boolean {
+  const m = mode ?? "auto";
+  if (m === "prompt") return false;
+  const supported = typeof adapter.generateStructured === "function";
+  if (m === "native") {
+    if (!supported) {
+      throw new ProviderError(`native structured output not supported by provider '${adapter.name}'`);
+    }
+    return true;
+  }
+  return supported; // "auto"
 }
 
 function streamFrom(
