@@ -10,10 +10,26 @@ function parseObject(raw: unknown, path: string): OutputSchema {
     throw new PromptParseError(`Output schema at '${path}' must be a map of field: type.`);
   }
   const fields: OutputField[] = [];
-  for (const [rawName, value] of Object.entries(raw as Record<string, unknown>)) {
-    const required = !rawName.endsWith("?");
-    const name = required ? rawName : rawName.slice(0, -1);
-    fields.push({ name, required, schema: parseNode(value, `${path}.${name}`) });
+  for (const [rawKey, value] of Object.entries(raw as Record<string, unknown>)) {
+    let key = rawKey;
+    const required = !key.endsWith("?");
+    if (!required) key = key.slice(0, -1);
+    const isArrayOfObjects = key.endsWith("[]");
+    if (isArrayOfObjects) key = key.slice(0, -2);
+
+    const fieldPath = `${path}.${key}`;
+    let schema: OutputSchema;
+    if (isArrayOfObjects) {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) {
+        throw new PromptParseError(
+          `Output field '${key}[]' must be a nested map (array of objects). For scalar arrays use 'name: type[]'.`
+        );
+      }
+      schema = { kind: "array", items: parseObject(value, fieldPath) };
+    } else {
+      schema = parseNode(value, fieldPath);
+    }
+    fields.push({ name: key, required, schema });
   }
   return { kind: "object", fields };
 }
