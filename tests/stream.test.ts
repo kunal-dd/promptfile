@@ -48,7 +48,16 @@ describe("StructuredStream", () => {
       yield "{";
       throw new Error("stream broke");
     }
-    const stream = new StructuredStream(boom(), schema, async (full) => ({ data: {}, text: full }));
-    await expect(stream.complete).rejects.toThrow("stream broke");
+    // complete rejects
+    const s1 = new StructuredStream(boom(), schema, async (full) => ({ data: {}, text: full }));
+    await expect(s1.complete).rejects.toThrow("stream broke");
+
+    // iterating also throws (covers the iterator error branch)
+    const s2 = new StructuredStream(boom(), schema, async (full) => ({ data: {}, text: full }));
+    await expect(
+      (async () => {
+        for await (const _ of s2) void _;
+      })()
+    ).rejects.toThrow("stream broke");
   });
 });

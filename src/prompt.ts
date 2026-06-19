@@ -33,13 +33,12 @@ export class Prompt {
     return renderMessages(this.ast, inputs);
   }
 
-  async run(inputs: Inputs = {}, opts: RunOptions = {}): Promise<RunResult> {
-    const messages = this.render(inputs);
+  private buildStructured(
+    messages: Message[],
+    schema: OutputSchema,
+    opts: RunOptions
+  ): { baseMessages: Message[]; reAsk: ReAsk } {
     const adapter = getAdapter(this.ast.config.provider);
-    if (!this.ast.output) {
-      return adapter.generate(messages, this.ast.config, opts);
-    }
-    const schema = this.ast.output;
     const baseMessages: Message[] = [
       ...messages,
       { role: "system", content: schemaInstruction(schema) },
@@ -57,6 +56,17 @@ export class Prompt {
       ];
       return (await adapter.generate(repairMessages, this.ast.config, opts)).text;
     };
+    return { baseMessages, reAsk };
+  }
+
+  async run(inputs: Inputs = {}, opts: RunOptions = {}): Promise<RunResult> {
+    const messages = this.render(inputs);
+    const adapter = getAdapter(this.ast.config.provider);
+    if (!this.ast.output) {
+      return adapter.generate(messages, this.ast.config, opts);
+    }
+    const schema = this.ast.output;
+    const { baseMessages, reAsk } = this.buildStructured(messages, schema, opts);
     const first = await adapter.generate(baseMessages, this.ast.config, opts);
     const { data, text } = await coerce(first.text, schema, reAsk, opts.repair ?? 1);
     return { ...first, text, data };
@@ -72,23 +82,7 @@ export class Prompt {
       return new StructuredStream(source, undefined, async (text) => ({ data: undefined, text }));
     }
 
-    const baseMessages: Message[] = [
-      ...messages,
-      { role: "system", content: schemaInstruction(schema) },
-    ];
-    const reAsk: ReAsk = async (prevText, problems) => {
-      const repairMessages: Message[] = [
-        ...baseMessages,
-        { role: "assistant", content: prevText },
-        {
-          role: "user",
-          content: `Your previous output was invalid:\n${problems.join(
-            "\n"
-          )}\nReturn corrected JSON only — no prose, no code fences.`,
-        },
-      ];
-      return (await adapter.generate(repairMessages, this.ast.config, opts)).text;
-    };
+    const { baseMessages, reAsk } = this.buildStructured(messages, schema, opts);
     const source = streamFrom(adapter, baseMessages, this.ast.config, opts);
     return new StructuredStream(source, schema, (text) =>
       coerce(text, schema, reAsk, opts.repair ?? 1)
