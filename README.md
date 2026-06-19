@@ -126,6 +126,48 @@ The deterministic suite needs no secrets, so it makes a clean merge gate:
     render-only: "true"   # set false + provide provider keys to run live tests
 ```
 
+## Structured output
+
+Declare an `output:` schema and `run()` returns validated, typed data — not just
+text. The runtime instructs the model to emit matching JSON, then extracts,
+validates, and repairs it (one corrective re-ask by default).
+
+```
+---
+model: claude-opus-4-8
+provider: anthropic
+input:
+  text: string
+output:
+  title: string
+  sentiment: enum(positive, neutral, negative)
+  topics: string[]
+  author:
+    name: string
+    handle?: string
+---
+<user>{{text}}</user>
+```
+
+Schema types: `string`, `number`, `boolean`, `enum(a, b, c)`, arrays (`string[]`),
+nested objects (indent), and optional fields (`name?`). Arrays hold scalars/enums
+in this release.
+
+```ts
+const result = await prompt.run({ text: "..." });
+result.data;  // { title, sentiment, topics, author } — validated
+result.text;  // the raw model output
+
+// Stream it: partial objects as they arrive, plus a validated final result.
+const stream = prompt.stream({ text: "..." });
+for await (const partial of stream) console.log(partial);
+const { data } = await stream.complete;
+```
+
+`run(inputs, { repair })` sets the max corrective re-asks (default `1`, `0` to
+disable). On unrecoverable output you get an `OutputValidationError` (with the
+per-field errors) or `OutputParseError`.
+
 ## Providers
 
 Anthropic and OpenAI are built in. Add your own with `registerAdapter`.

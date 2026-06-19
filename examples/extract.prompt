@@ -1,0 +1,17 @@
+---
+model: claude-opus-4-8
+provider: anthropic
+input:
+  text: string
+output:
+  title: string
+  sentiment: enum(positive, neutral, negative)
+  topics: string[]
+---
+<system>
+Extract structured metadata from the user's text.
+</system>
+
+<user>
+{{text}}
+</user>
