@@ -77,20 +77,23 @@ export class Prompt {
     return { ...first, text, data } as RunResult<T>;
   }
 
-  stream(inputs: Inputs = {}, opts: RunOptions = {}): StructuredStream {
+  stream<T = unknown>(inputs: Inputs = {}, opts: RunOptions = {}): StructuredStream<T> {
     const messages = this.render(inputs);
     const adapter = getAdapter(this.ast.config.provider);
     const schema = this.ast.output;
 
     if (!schema) {
       const source = streamFrom(adapter, messages, this.ast.config, opts);
-      return new StructuredStream<unknown>(source, undefined, async (text) => ({ data: undefined, text }));
+      return new StructuredStream<T>(source, undefined, async (text) => ({
+        data: undefined as T,
+        text,
+      }));
     }
 
     const { baseMessages, reAsk } = this.buildStructured(messages, schema, opts);
     const source = streamFrom(adapter, baseMessages, this.ast.config, opts);
-    return new StructuredStream(source, schema, (text) =>
-      coerce(text, schema, reAsk, opts.repair ?? 1)
+    return new StructuredStream<T>(source, schema, (text) =>
+      coerce(text, schema, reAsk, opts.repair ?? 1) as Promise<{ data: T; text: string }>
     );
   }
 }
