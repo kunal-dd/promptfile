@@ -91,7 +91,11 @@ export function buildProgram(): Command {
       const prompt = await loadPrompt(file);
       const inputs = await resolveInputs(options.varsFile, options.var, prompt.inputs);
       const result = await prompt.run(inputs);
-      console.log(result.text);
+      if (result.data !== undefined) {
+        console.log(JSON.stringify(result.data, null, 2));
+      } else {
+        console.log(result.text);
+      }
     });
 
   program
