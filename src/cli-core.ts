@@ -8,12 +8,18 @@ import type { TestReport } from "./tests/types.js";
 import type { Inputs, InputSpec } from "./types.js";
 import { toTypeScript } from "./output/typegen.js";
 
+function capitalizeFirstLetter(w: string): string {
+  return w.replace(/[a-zA-Z]/, (c) => c.toUpperCase());
+}
+
 function pascalCase(stem: string): string {
-  return stem
+  const name = stem
     .split(/[^a-zA-Z0-9]+/)
     .filter(Boolean)
-    .map((w) => w[0]!.toUpperCase() + w.slice(1))
+    .map(capitalizeFirstLetter)
     .join("");
+  if (name.length === 0) return "Output";
+  return /^[0-9]/.test(name) ? `_${name}` : name;
 }
 
 export function collectVar(value: string, previous: Record<string, string>): Record<string, string> {

@@ -45,4 +45,13 @@ describe("promptfile types", () => {
     expect(process.exitCode).toBe(1);
     process.exitCode = prev;
   });
+
+  it("produces a valid identifier for a leading-digit filename", async () => {
+    const file = await tmpFile("9lives.prompt", WITH_OUTPUT);
+    const log = vi.spyOn(console, "log").mockImplementation(() => {});
+    await buildProgram().parseAsync(["node", "promptfile", "types", file]);
+    const out = log.mock.calls.map((c) => c[0]).join("\n");
+    // must not start the interface name with a digit
+    expect(out).toContain("export interface _9Lives {");
+  });
 });
